@@ -59,6 +59,51 @@ echo '<main>
 			}
 		})
 	})
+	
+
+
+	$(document).on("click",".updatedata",function() {
+	
+	  id = $(this).attr("data-id"); // Get the clicked id for update 
+	  currentRow = $(this).closest("tr"); // Get a reference to the row that has the button we clicked
+	  $.ajax({
+	  
+	    		
+			type:"post",
+			url:location.pathname, // sending the request to the same page we are on right now
+			data:{"action":"updateEntry","id":id, "title":title, "entry":entry},
+			success:function(response){
+			  if (response == "ok"){
+					  // Add response in Modal body
+					  $(".modal-body").html(response);
+
+					  // Display Modal
+					  $("#myModal").modal("show"); 
+			  
+			  
+			  }  else {
+					// throw an error modally to let the user know there was an error
+					console.log(data.body)
+				}
+
+		$(document).ajaxStop(function(){
+		window.location.reload();
+	});
+			
+			
+			
+			
+		  }
+			
+		})
+	
+	
+	
+	
+	})
+	
+		
+
 
 	</script>
 	
@@ -95,6 +140,7 @@ if(isset($_POST["delete"])) {
     }
 
 }
+}
 echo "outside update isset";
 
 
@@ -108,14 +154,14 @@ while ($row = $query->fetch(PDO::FETCH_ASSOC))
 		<td class="title">'.$row['title'].'</td>
 		<td class="entry">'.$row['entry'].'</td>	
 		<td class= ""><form action="" method="POST"><input type="hidden" name="id" data-id="'.$row['id'].'" value= "'.$row['id'].'"><input type="submit" class="deletedata btn btn-sm btn-danger" value="Delete" name="delete" onclick="return confirm(\'Are you sure you want to delete row: ' . $row["id"] . '?\')"></form></td>
-		<td class= ""><button type="button" class="btn btn-sm btn-success" value="Update" data-toggle="modal" data-target="#exampleModal">Update</button></td>
+		<td class= ""><form action="" method="POST" name="edit"><input type="hidden" name="id" data-id="'.$row['id'].'" value= "'.$row['id'].'"><input type="button" class="updatedata btn btn-sm btn-success"  name="edit" value="Update" data-toggle="modal" data-target="#myModal"onclick="return confirm(\'Are you sure you want to delete row: ' . $row["id"] . '?\')"></form></td>
 		';
 	}//end of query
 
 	
 //$dbh=NULL;
 
-}
+
 
 			
 
@@ -126,12 +172,15 @@ echo '
 </div>
 </div>
 </main>';
-	  
 
+	  
+$query = $dbh->query("SELECT * FROM entries ORDER BY date_entered DESC");
+var_dump($query);
+if (!$conn){echo'no connection';}
 
 	  
 //Modal Entry Update Form 
-echo '<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+echo '<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -141,7 +190,7 @@ echo '<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria
         </button>
       </div>
       <div class="modal-body">
-<form action="edit_entry.php" method="post">
+<form action="crud2.php" method="post">
 	<p>Entry Title: <input type="text" name="title" size="40" maxsize="100" value="' . htmlentities($row['title']) . '"></p>
 	<p>Entry Text: <textarea name="entry" cols="40" rows="5">' . htmlentities($row['entry']) . '</textarea></p>
 
@@ -159,6 +208,58 @@ echo '<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria
     </div>
   </div>
 </div>';
+echo "outside delete isset";
+
+
+echo "<br>outside update isset";
+ if (isset($_POST['edit']) && is_numeric($_POST['id'])) { // Handle the form.
+
+	// Validate and secure the form data:
+	$problem = FALSE;
+	if (!empty($_POST['title']) && !empty($_POST['entry'])) {
+		$id = $_POST['id'];
+		$title = trim(strip_tags($_POST['title']));
+		$entry = trim(strip_tags($_POST['entry']));
+		
+	} 
+	 
+	 else {
+		print '<p style="color: red;">Please submit both a title and an entry.</p>';
+		$problem = TRUE;
+	}
+	
+if (!$problem) {
+	//echo 'inside no problem';
+	// modal form 'update' id button 
+if(isset($_POST["edit"])) {
+	echo 'inside modal update isset';
+    $id = isset($_POST["id"]) ? intval($_POST["id"]) : 0;
+    if ($id > 0) {
+		$update = $dbh->prepare("UPDATE entries SET title='$title', entry='$entry' WHERE id={$_POST['id']}");
+		echo 'past dbh prepare';
+		$update->bindParam(':title', $title);
+		$update->bindParam(':entry', $entry);
+		$update->bindParam(':id', $id);
+
+		var_dump($update);
+        
+		// Report on the result:
+		if ($update->execute()) {
+			print '<p>The blog entry has been updated.</p>';
+			echo 'inside update execute';
+		} else {
+			print '<p style="color: red;">WEBD166 Edit Update Failed</p>';
+		}
+
+	} // No problem!
+
+}
+} // end of if no problem
+ } // end of handle the form
+	 else { // No ID set.
+	print '<p style="color: red;">This page has been accessed in error.</p>';
+} 
+
 ?>
 	  
     <!-- Optional JavaScript -->
